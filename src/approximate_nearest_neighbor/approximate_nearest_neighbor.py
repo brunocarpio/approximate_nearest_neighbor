@@ -8,6 +8,8 @@ from sortedcontainers import SortedSet
 
 class Space(Enum):
     L2 = "l2"
+    IP = "ip"
+    COSINE = "cosine"
 
 
 class Vertex:
@@ -35,6 +37,13 @@ class NSMWGraph:
         match self.space:
             case Space.L2:
                 return np.linalg.norm(u - v)
+            case Space.IP:
+                return 1.0 - np.inner(u, v)
+            case Space.COSINE:
+                norm_u = np.linalg.norm(u)
+                norm_v = np.linalg.norm(v)
+                similarity = np.inner(u, v) / (norm_u * norm_v)
+                return 1.0 - similarity
             case _:
                 raise ValueError("Unknown space")
 
@@ -111,7 +120,7 @@ if __name__ == "__main__":
     dimension = 50
     data = np.random.randn(n_samples, dimension)
 
-    graph = NSMWGraph(w=20, f=10, space=Space.L2)
+    graph = NSMWGraph(w=20, f=10, space=Space.COSINE)
 
     print(f"Inserting {n_samples} vectors...")
     for i in range(n_samples):
