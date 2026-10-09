@@ -95,6 +95,9 @@ class NSMWGraph:
 
                 temp_result.add((closest_d, closest_id))
 
+                if len(temp_result) > k:
+                    temp_result.pop()
+
                 c = self.vertices[closest_id]
 
                 for friend in c.neighbors:
@@ -103,7 +106,6 @@ class NSMWGraph:
                         friend_distance = self._distance_function(friend.vector, q)
 
                         candidates.add((friend_distance, friend.id))
-                        temp_result.add((friend_distance, friend.id))
                         parent[friend.id] = closest_id
 
             result.update(temp_result)
