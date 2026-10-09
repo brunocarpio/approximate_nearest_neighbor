@@ -54,14 +54,20 @@ class NSMWGraph:
         v_friends = self.search(v.vector, m=self.w, k=self.f)
 
         for i in range(min(self.f, len(v_friends))):
-            _, friend_id = v_friends[i]
+            _, friend_id, _ = v_friends[i]
             friend = self.vertices[friend_id]
             friend.connect(v)
             v.connect(friend)
 
         self.vertices[v.id] = v
 
-    def search(self, q: np.ndarray, m: int, k: int) -> list[tuple[float32, Any]]:
+    def _reconstruct_path(self, parent: dict, vid: Any) -> list:
+        if vid is None:
+            return []
+
+        return self._reconstruct_path(parent, parent.get(vid)) + [vid]
+
+    def search(self, q: np.ndarray, m: int, k: int) -> list[tuple[float32, Any, Any]]:
         if not self.vertices:
             raise ValueError("cannot search an empty graph")
 
@@ -70,12 +76,16 @@ class NSMWGraph:
         visited = set()
         result = SortedSet(key=lambda x: x[0])
 
+        parent = {}
+
         for _ in range(m):
             v_entry = self._random_entry()
             v_distance = self._distance_function(v_entry.vector, q)
 
             candidates.add((v_distance, v_entry.id))
             visited.add(v_entry.id)
+
+            parent.setdefault(v_entry.id, None)
 
             while candidates:
                 closest_d, closest_id = candidates.pop(0)
@@ -94,10 +104,14 @@ class NSMWGraph:
 
                         candidates.add((friend_distance, friend.id))
                         temp_result.add((friend_distance, friend.id))
+                        parent[friend.id] = closest_id
 
             result.update(temp_result)
 
-        return list(result)[:k]
+        return [
+            (vd, vid, self._reconstruct_path(parent, vid))
+            for vd, vid in list(result)[:k]
+        ]
 
     def vertex_count(self) -> int:
         return len(self.vertices)
@@ -116,19 +130,30 @@ class NSMWGraph:
 
 
 if __name__ == "__main__":
-    n_samples = 500
-    dimension = 50
+    n_samples = 20
+    dimension = 4
     data = np.random.randn(n_samples, dimension)
 
-    graph = NSMWGraph(w=20, f=10, space=Space.COSINE)
+    graph = NSMWGraph(w=8, f=5, space=Space.L2)
+
+    q = np.random.randn(1, dimension)[0]
 
     print(f"Inserting {n_samples} vectors...")
     for i in range(n_samples):
         vertex = Vertex(i, data[i])
         graph.insert(vertex)
+        print(
+            f"Inserted:   ID: {vertex.id}, distance to q: {graph._distance_function(q, vertex.vector)}"
+        )
 
     print(f"Vertices: {graph.vertex_count()}")
     print(f"Edges: {graph.edge_count()}")
 
     print("\nAdjency:")
     print(graph.degree_statistics())
+
+    print("\nSearch from q:")
+    results = graph.search(q, m=8, k=3)
+    print(f"Found {len(results)} nearest neighbors")
+    for vd, vid, hops in results:
+        print(f"    ID: {vid}, distance: {vd}, hops: {hops}")
