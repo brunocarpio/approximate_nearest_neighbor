@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from graph import NSMWGraph, Space, Vertex
+
+from approximate_nearest_neighbor.graph import NSMWGraph, Space, Vertex
 
 
 def avg_hops(g, q):
