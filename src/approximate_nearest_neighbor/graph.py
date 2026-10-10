@@ -23,14 +23,15 @@ class Vertex:
 
 
 class NSMWGraph:
-    def __init__(self, w=20, f=10, space=Space.L2):
+    def __init__(self, w=20, f=10, space=Space.L2, seed=None):
         self.vertices: dict[Any, Vertex] = {}
         self.w = w
         self.f = f
         self.space = space
+        self.rng = np.random.default_rng(seed)
 
     def _random_entry(self) -> Any:
-        key = np.random.choice(list(self.vertices.keys()))
+        key = self.rng.choice(list(self.vertices.keys()))
         return self.vertices.get(key)
 
     def _distance_function(self, u: np.ndarray, v: np.ndarray):
@@ -134,9 +135,12 @@ class NSMWGraph:
 if __name__ == "__main__":
     n_samples = 20
     dimension = 4
-    data = np.random.randn(n_samples, dimension)
 
-    graph = NSMWGraph(w=8, f=5, space=Space.L2)
+    seed = 42
+    rng = np.random.default_rng(seed)
+    data = rng.standard_normal((n_samples, dimension))
+
+    graph = NSMWGraph(w=20, f=12, space=Space.L2, seed=seed)
 
     q = np.random.randn(1, dimension)[0]
 
@@ -155,7 +159,7 @@ if __name__ == "__main__":
     print(graph.degree_statistics())
 
     print("\nSearch from q:")
-    results = graph.search(q, m=8, k=3)
+    results = graph.search(q, m=20, k=3)
     print(f"Found {len(results)} nearest neighbors")
     for vd, vid, hops in results:
         print(f"    ID: {vid}, distance: {vd}, hops: {hops}")
