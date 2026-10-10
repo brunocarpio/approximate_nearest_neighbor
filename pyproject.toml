@@ -1,7 +1,7 @@
 [project]
 name = "approximate_nearest_neighbor"
 version = "0.1.0"
-description = "TODO"
+description = "Python implementation of the approximate nearest neighbor algorithm as discribed in https://www.sciencedirect.com/science/article/abs/pii/S0306437913001300?via%3Dihub"
 readme = "README.md"
 authors = [
     { name = "Bruno Carpio", email = "bcluna@pm.me" }
