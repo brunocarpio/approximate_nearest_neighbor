@@ -41,6 +41,11 @@ uv run ann
 uv run src/approximate_nearest_neighbor/complexity.py
 ```
 
+## Example output
+
+![Search path](assets/search_path_example.png)
+![Hop count](assets/hop_count_vs_dimension.png)
+
 ## How it works
 
 The graph stores each data point as a vertex. During insertion, a new point is connected to a small set of nearby vertices. During search, the algorithm starts from an entry point and greedily moves through the graph toward vertices that are closer to the query.
