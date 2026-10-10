@@ -20,7 +20,7 @@ if __name__ == "__main__":
         100: {"color": "black", "marker": "s"},
     }
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.8))
+    _, ax = plt.subplots(figsize=(7.2, 4.8))
 
     for dim, style in dim_styles.items():
         ys = []
