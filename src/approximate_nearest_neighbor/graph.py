@@ -25,14 +25,14 @@ class Vertex:
 class NSMWGraph:
     def __init__(self, w=20, f=10, space=Space.L2, seed=None):
         self.vertices: dict[Any, Vertex] = {}
+        self._ids: list[Any] = []
         self.w = w
         self.f = f
         self.space = space
         self.rng = np.random.default_rng(seed)
 
-    def _random_entry(self) -> Any:
-        key = self.rng.choice(list(self.vertices.keys()))
-        return self.vertices.get(key)
+    def _random_entry(self) -> Vertex:
+        return self.vertices[self._ids[self.rng.integers(len(self._ids))]]
 
     def _distance_function(self, u: np.ndarray, v: np.ndarray):
         match self.space:
@@ -51,6 +51,7 @@ class NSMWGraph:
     def insert(self, v: Vertex) -> None:
         if not self.vertices:
             self.vertices[v.id] = v
+            self._ids.append(v.id)
             return
 
         v_friends = self.search(v.vector, m=self.w, k=self.f)
@@ -62,6 +63,7 @@ class NSMWGraph:
             v.connect(friend)
 
         self.vertices[v.id] = v
+        self._ids.append(v.id)
 
     def _reconstruct_path(self, parent: dict, vid: Any) -> list:
         if vid is None:

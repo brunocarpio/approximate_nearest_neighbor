@@ -1,10 +1,13 @@
-"""Regression tests for NSMWGraph (review items 1.1 and 1.2).
+"""Regression tests for NSMWGraph (review items 1.1, 1.2 and 1.3).
 
 1.1 -- ``insert`` must not connect the very first vertex to itself.
 1.2 -- the ``m``-start ``search`` must not carry state from one start into
        the next, which makes extra entry points *worse* than fewer.
+1.3 -- ``_random_entry`` must work for any hashable id, not just scalars,
+       and must pick an entry without scanning the whole vertex set
+       (otherwise insertion/search degrade to O(n^2)).
 
-These are expected to fail until the two defects are fixed.
+These are expected to fail until the defects are fixed.
 """
 
 import numpy as np
@@ -54,3 +57,39 @@ def test_multi_start_search_does_not_leak_state(monkeypatch):
     best_both = min(distance for distance, _, _ in both)
 
     assert best_both <= best_alone
+
+
+def test_insert_and_search_support_non_scalar_ids():
+    graph = NSMWGraph(w=4, f=2, seed=0)
+    for i, vertex_id in enumerate([(0, 0), (1, 1), (2, 2)]):
+        graph.insert(Vertex(vertex_id, np.full(2, i)))
+
+    results = graph.search(np.array([0.5, 0.5]), m=3, k=2)
+
+    assert len(results) == 2
+
+
+class CountingDict(dict):
+    """A dict that records how many keys have been enumerated."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scanned = 0
+
+    def keys(self):
+        self.scanned += len(self)
+        return super().keys()
+
+    def __iter__(self):
+        self.scanned += len(self)
+        return super().__iter__()
+
+
+def test_random_entry_does_not_scan_all_vertices(monkeypatch):
+    graph = make_graph(n=100)
+    vertices = CountingDict(graph.vertices)
+    monkeypatch.setattr(graph, "vertices", vertices)
+
+    graph._random_entry()
+
+    assert vertices.scanned <= 1
