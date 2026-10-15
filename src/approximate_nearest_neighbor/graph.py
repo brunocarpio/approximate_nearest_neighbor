@@ -30,9 +30,11 @@ class NSMWGraph:
         self.f = f
         self.space = space
         self.rng = np.random.default_rng(seed)
+        self.query_rng = np.random.default_rng(seed)
 
-    def _random_entry(self) -> Vertex:
-        return self.vertices[self._ids[self.rng.integers(len(self._ids))]]
+    def _random_entry(self, rng: np.random.Generator | None = None) -> Vertex:
+        rng = self.rng if rng is None else rng
+        return self.vertices[self._ids[rng.integers(len(self._ids))]]
 
     def _distance_function(self, u: np.ndarray, v: np.ndarray):
         match self.space:
@@ -54,7 +56,7 @@ class NSMWGraph:
             self._ids.append(v.id)
             return
 
-        v_friends = self.search(v.vector, m=self.w, k=self.f)
+        v_friends = self.search(v.vector, m=self.w, k=self.f, rng=self.rng)
 
         for i in range(min(self.f, len(v_friends))):
             _, friend_id, _ = v_friends[i]
@@ -71,9 +73,17 @@ class NSMWGraph:
 
         return self._reconstruct_path(parent, parent.get(vid)) + [vid]
 
-    def search(self, q: np.ndarray, m: int, k: int) -> list[tuple[float32, Any, Any]]:
+    def search(
+        self,
+        q: np.ndarray,
+        m: int,
+        k: int,
+        rng: np.random.Generator | None = None,
+    ) -> list[tuple[float32, Any, Any]]:
         if not self.vertices:
             raise ValueError("cannot search an empty graph")
+
+        rng = self.query_rng if rng is None else rng
 
         result = SortedSet(key=lambda x: x[0])
         paths = {}
@@ -84,7 +94,7 @@ class NSMWGraph:
             visited = set()
             parent = {}
 
-            v_entry = self._random_entry()
+            v_entry = self._random_entry(rng)
             v_distance = self._distance_function(v_entry.vector, q)
 
             candidates.add((v_distance, v_entry.id))

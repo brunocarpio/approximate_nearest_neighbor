@@ -6,6 +6,8 @@
 1.3 -- ``_random_entry`` must work for any hashable id, not just scalars,
        and must pick an entry without scanning the whole vertex set
        (otherwise insertion/search degrade to O(n^2)).
+2.1 -- ``search`` must not advance the graph's construction RNG, so an extra
+       query cannot change the graph that later ``insert`` calls build.
 
 These are expected to fail until the defects are fixed.
 """
@@ -47,7 +49,7 @@ def test_multi_start_search_does_not_leak_state(monkeypatch):
 
     def search_from(entry_ids):
         queued = [graph.vertices[i] for i in entry_ids]
-        monkeypatch.setattr(graph, "_random_entry", lambda: queued.pop(0))
+        monkeypatch.setattr(graph, "_random_entry", lambda *_: queued.pop(0))
         return graph.search(query, m=len(entry_ids), k=5)
 
     alone = search_from([359])
@@ -93,3 +95,34 @@ def test_random_entry_does_not_scan_all_vertices(monkeypatch):
     graph._random_entry()
 
     assert vertices.scanned <= 1
+
+
+def test_search_does_not_advance_construction_rng():
+    graph = make_graph(n=100)
+    state = graph.rng.bit_generator.state
+
+    graph.search(graph.vertices[0].vector, m=5, k=5)
+
+    assert graph.rng.bit_generator.state == state
+
+
+def test_search_does_not_change_graph_construction():
+    seed, n = 7, 120
+    vectors = np.random.default_rng(seed).standard_normal((n, 4))
+
+    def build(with_query):
+        graph = NSMWGraph(w=10, f=3, space=Space.L2, seed=seed)
+        for i, vector in enumerate(vectors):
+            if with_query and i == n // 2:
+                graph.search(vectors[0], m=5, k=5)
+            graph.insert(Vertex(i, vector))
+        return graph
+
+    def edges(graph):
+        return {
+            (min(v.id, nb.id), max(v.id, nb.id))
+            for v in graph.vertices.values()
+            for nb in v.neighbors
+        }
+
+    assert edges(build(with_query=False)) == edges(build(with_query=True))
