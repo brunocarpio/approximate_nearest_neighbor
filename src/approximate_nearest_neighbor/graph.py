@@ -51,6 +51,7 @@ class NSMWGraph:
     def insert(self, v: Vertex) -> None:
         if not self.vertices:
             self.vertices[v.id] = v
+            return
 
         v_friends = self.search(v.vector, m=self.w, k=self.f)
 
@@ -72,21 +73,22 @@ class NSMWGraph:
         if not self.vertices:
             raise ValueError("cannot search an empty graph")
 
-        temp_result = SortedSet(key=lambda x: x[0])
-        candidates = SortedSet(key=lambda x: x[0])
-        visited = set()
         result = SortedSet(key=lambda x: x[0])
-
-        parent = {}
+        paths = {}
 
         for _ in range(m):
+            temp_result = SortedSet(key=lambda x: x[0])
+            candidates = SortedSet(key=lambda x: x[0])
+            visited = set()
+            parent = {}
+
             v_entry = self._random_entry()
             v_distance = self._distance_function(v_entry.vector, q)
 
             candidates.add((v_distance, v_entry.id))
             visited.add(v_entry.id)
 
-            parent.setdefault(v_entry.id, None)
+            parent[v_entry.id] = None
 
             while candidates:
                 closest_d, closest_id = candidates.pop(0)
@@ -109,12 +111,12 @@ class NSMWGraph:
                         candidates.add((friend_distance, friend.id))
                         parent[friend.id] = closest_id
 
+            for _, vid in temp_result:
+                paths[vid] = self._reconstruct_path(parent, vid)
+
             result.update(temp_result)
 
-        return [
-            (vd, vid, self._reconstruct_path(parent, vid))
-            for vd, vid in list(result)[:k]
-        ]
+        return [(vd, vid, paths[vid]) for vd, vid in list(result)[:k]]
 
     def vertex_count(self) -> int:
         return len(self.vertices)

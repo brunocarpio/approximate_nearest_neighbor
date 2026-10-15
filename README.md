@@ -41,6 +41,11 @@ uv run ann
 uv run src/approximate_nearest_neighbor/complexity.py
 ```
 
+- Run the test suite:
+```bash
+uv run ann-test
+```
+
 ## Example output
 
 ![Search path](assets/search_path_example.png)
