@@ -45,8 +45,9 @@ class NSMWGraph:
             case Space.COSINE:
                 norm_u = np.linalg.norm(u)
                 norm_v = np.linalg.norm(v)
-                similarity = np.inner(u, v) / (norm_u * norm_v)
-                return 1.0 - similarity
+                if norm_u == 0.0 or norm_v == 0.0:
+                    return 1.0
+                return 1.0 - np.inner(u, v) / (norm_u * norm_v)
             case _:
                 raise ValueError("Unknown space")
 

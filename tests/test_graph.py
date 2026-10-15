@@ -8,6 +8,7 @@
        (otherwise insertion/search degrade to O(n^2)).
 2.1 -- ``search`` must not advance the graph's construction RNG, so an extra
        query cannot change the graph that later ``insert`` calls build.
+4.1 -- cosine distance must be finite for a zero vector, not NaN.
 
 These are expected to fail until the defects are fixed.
 """
@@ -126,3 +127,13 @@ def test_search_does_not_change_graph_construction():
         }
 
     assert edges(build(with_query=False)) == edges(build(with_query=True))
+
+
+def test_cosine_distance_is_finite_for_zero_vectors():
+    graph = NSMWGraph(w=4, f=2, space=Space.COSINE, seed=0)
+    graph.insert(Vertex(0, np.zeros(2)))
+    graph.insert(Vertex(1, np.array([1.0, 0.0])))
+
+    results = graph.search(np.zeros(2), m=2, k=2)
+
+    assert all(np.isfinite(distance) for distance, _, _ in results)
