@@ -41,6 +41,11 @@ uv run ann
 uv run src/approximate_nearest_neighbor/complexity.py
 ```
 
+- Run a visualization of a semantic search using TensorFlow's Universal Sentence Encoder to embed a set of sentences and a query
+```bash
+uv run src/approximate_nearest_neighbor/semantic.py
+```
+
 - Run the test suite:
 ```bash
 uv run ann-test
@@ -50,6 +55,7 @@ uv run ann-test
 
 ![Search path](assets/search_path_example.png)
 ![Hop count](assets/hop_count_vs_dimension.png)
+![Semantic search](assets/semantic_search.png)
 
 ## How it works
 
